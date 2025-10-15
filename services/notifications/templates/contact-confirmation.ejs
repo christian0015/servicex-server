@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #2196F3; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Confirmation de Contact</h1>
+        </div>
+        <div class="content">
+            <p>Bonjour <strong><%= clientName %></strong>,</p>
+            <p>Votre demande de contact a bien été envoyée à <strong><%= providerName %></strong>.</p>
+            
+            <h3>Récapitulatif :</h3>
+            <ul>
+                <li><strong>Prestataire :</strong> <%= providerName %></li>
+                <li><strong>Service :</strong> <%= serviceType %></li>
+                <li><strong>Date :</strong> <%= contactDate %></li>
+            </ul>
+            
+            <p><strong>Coordonnées du prestataire :</strong></p>
+            <ul>
+                <li><strong>Téléphone :</strong> <%= providerPhone %></li>
+                <% if (providerEmail) { %>
+                <li><strong>Email :</strong> <%= providerEmail %></li>
+                <% } %>
+            </ul>
+            
+            <p>Le prestataire devrait vous répondre sous 24 heures.</p>
+        </div>
+        <div class="footer">
+            <p>ServiceX - Plateforme de mise en relation</p>
+            <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+        </div>
+    </div>
+</body>
+</html>
