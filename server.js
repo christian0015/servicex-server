@@ -70,6 +70,9 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/providers', require('./routes/providers'));
 
+// Dans server.js, ajoutez cette ligne avec les autres routes
+app.use('/api/seed', require('./routes/seed'));
+
 // Initialisation des services après connexion DB
 mongoose.connection.once('open', async () => {
   console.log('✅ Connecté à MongoDB');

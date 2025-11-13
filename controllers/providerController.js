@@ -539,7 +539,7 @@ class ProviderController {
   }
 
   /**
-   * 🔍 RECHERCHER DES PRESTATAIRES
+   * 🔍 RECHERCHER DES PRESTATAIRES - VERSION AMÉLIORÉE
    */
   async searchProviders(req, res) {
     try {
@@ -555,25 +555,60 @@ class ProviderController {
         limit = 20
       } = req.query;
 
+      console.log('🔍 Search request received:', {
+        searchQuery,
+        service,
+        zone,
+        minRating,
+        maxPrice,
+        availability
+      });
+
       // 🎯 Construction de la query de recherche
       const query = { isActive: true };
 
-      // Recherche texte dans nom, description, services
+      // 🔧 CORRECTION : Recherche texte plus flexible
       if (searchQuery) {
-        query.$or = [
-          { fullName: { $regex: searchQuery, $options: 'i' } },
-          { description: { $regex: searchQuery, $options: 'i' } },
-          { 'services.label': { $regex: searchQuery, $options: 'i' } },
-          { zones: { $regex: searchQuery, $options: 'i' } }
-        ];
+        const searchWords = searchQuery.split(' ').filter(word => word.length > 0);
+        
+        // Créer un tableau de conditions regex pour chaque mot
+        const searchConditions = searchWords.map(word => ({
+          $or: [
+            { fullName: { $regex: word, $options: 'i' } },
+            { description: { $regex: word, $options: 'i' } },
+            { 'services.label': { $regex: word, $options: 'i' } },
+            { zones: { $regex: word, $options: 'i' } }
+          ]
+        }));
+
+        // Combiner avec $and pour que tous les mots soient trouvés (recherche ET)
+        query.$and = searchConditions;
       }
 
-      // Filtres additionnels
-      if (service) query['services.label'] = service;
-      if (zone) query.zones = { $in: [new RegExp(zone, 'i')] };
-      if (minRating) query['rating.average'] = { $gte: parseFloat(minRating) };
-      if (maxPrice) query['services.price'] = { $lte: parseFloat(maxPrice) };
-      if (availability) query['currentStatus.status'] = availability;
+      // 🔧 CORRECTION : Filtres plus flexibles
+      if (service) {
+        // Recherche partielle dans les services
+        query['services.label'] = { $regex: service, $options: 'i' };
+      }
+      
+      if (zone) {
+        // Recherche partielle dans les zones
+        query.zones = { $in: [new RegExp(zone, 'i')] };
+      }
+      
+      if (minRating) {
+        query['rating.average'] = { $gte: parseFloat(minRating) };
+      }
+      
+      if (maxPrice) {
+        query['services.price'] = { $lte: parseFloat(maxPrice) };
+      }
+      
+      if (availability) {
+        query['currentStatus.status'] = availability;
+      }
+
+      console.log('🎯 Final search query:', JSON.stringify(query, null, 2));
 
       // Options de tri
       const sortOptions = {};
@@ -606,6 +641,8 @@ class ProviderController {
         .lean();
 
       const total = await ServiceProvider.countDocuments(query);
+
+      console.log(`📊 Search results: ${providers.length} providers found`);
 
       // 💾 Sauvegarde de la recherche si client connecté
       if (req.user && req.user.model === 'Client') {
@@ -649,6 +686,118 @@ class ProviderController {
       });
     }
   }
+
+  /**
+   * 🔍 RECHERCHER DES PRESTATAIRES
+   */
+  // async searchProviderss(req, res) {
+  //   try {
+  //     const {
+  //       q: searchQuery,
+  //       service,
+  //       zone,
+  //       minRating = 0,
+  //       maxPrice,
+  //       availability,
+  //       sortBy = 'relevance',
+  //       page = 1,
+  //       limit = 20
+  //     } = req.query;
+
+  //     // 🎯 Construction de la query de recherche
+  //     const query = { isActive: true };
+
+  //     // Recherche texte dans nom, description, services
+  //     if (searchQuery) {
+  //       query.$or = [
+  //         { fullName: { $regex: searchQuery, $options: 'i' } },
+  //         { description: { $regex: searchQuery, $options: 'i' } },
+  //         { 'services.label': { $regex: searchQuery, $options: 'i' } },
+  //         { zones: { $regex: searchQuery, $options: 'i' } }
+  //       ];
+  //     }
+
+  //     // Filtres additionnels
+  //     if (service) query['services.label'] = service;
+  //     if (zone) query.zones = { $in: [new RegExp(zone, 'i')] };
+  //     if (minRating) query['rating.average'] = { $gte: parseFloat(minRating) };
+  //     if (maxPrice) query['services.price'] = { $lte: parseFloat(maxPrice) };
+  //     if (availability) query['currentStatus.status'] = availability;
+
+  //     // Options de tri
+  //     const sortOptions = {};
+  //     switch(sortBy) {
+  //       case 'rating':
+  //         sortOptions['rating.average'] = -1;
+  //         break;
+  //       case 'price_low':
+  //         sortOptions['services.price'] = 1;
+  //         break;
+  //       case 'price_high':
+  //         sortOptions['services.price'] = -1;
+  //         break;
+  //       case 'views':
+  //         sortOptions['profileStats.totalViews'] = -1;
+  //         break;
+  //       case 'recent':
+  //         sortOptions['createdAt'] = -1;
+  //         break;
+  //       default: // relevance
+  //         sortOptions['rating.average'] = -1;
+  //         sortOptions['profileStats.totalViews'] = -1;
+  //     }
+
+  //     const providers = await ServiceProvider.find(query)
+  //       .select('fullName profilePhoto rating services zones availability currentStatus description profileStats')
+  //       .sort(sortOptions)
+  //       .limit(limit * 1)
+  //       .skip((page - 1) * limit)
+  //       .lean();
+
+  //     const total = await ServiceProvider.countDocuments(query);
+
+  //     // 💾 Sauvegarde de la recherche si client connecté
+  //     if (req.user && req.user.model === 'Client') {
+  //       try {
+  //         await Client.findByIdAndUpdate(req.user.id, {
+  //           $push: {
+  //             searchHistory: {
+  //               query: searchQuery || '',
+  //               filters: { service, zone, minRating, maxPrice },
+  //               resultsCount: providers.length,
+  //               searchedAt: new Date()
+  //             }
+  //           }
+  //         });
+  //       } catch (searchError) {
+  //         console.log('⚠️ Sauvegarde recherche échouée:', searchError.message);
+  //       }
+  //     }
+
+  //     res.json({
+  //       success: true,
+  //       data: providers,
+  //       pagination: {
+  //         page: parseInt(page),
+  //         limit: parseInt(limit),
+  //         total,
+  //         totalPages: Math.ceil(total / limit)
+  //       },
+  //       search: {
+  //         query: searchQuery,
+  //         filters: { service, zone, minRating, maxPrice, availability },
+  //         sortBy
+  //       }
+  //     });
+
+  //   } catch (error) {
+  //     console.error('❌ Erreur recherche prestataires:', error);
+  //     res.status(500).json({
+  //       success: false,
+  //       message: 'Erreur lors de la recherche'
+  //     });
+  //   }
+  // }
 
   /**
    * 🎖️ RÉCUPÉRER LES BADGES D'UN PRESTATAIRE
