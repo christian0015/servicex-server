@@ -620,6 +620,38 @@ class NotificationService {
       }
     }, 24 * 60 * 60 * 1000); // Toutes les 24 heures
   }
+  
+  /**
+   * 🔔 Notifier un nouveau message
+   */
+  async notifyNewMessage(recipientId, recipientModel, messageData) {
+    try {
+      const notification = new Notification({
+        userId: recipientId,
+        userModel: recipientModel,
+        type: 'new_message',
+        title: 'Nouveau message',
+        message: `${messageData.senderName} : ${messageData.messagePreview}`,
+        data: {
+          conversationId: messageData.conversationId,
+          senderName: messageData.senderName,
+          unreadCount: messageData.unreadCount,
+          type: 'message'
+        },
+        priority: 'medium'
+      });
+
+      await notification.save();
+
+      // 🔄 Notification WebSocket en temps réel
+      this.sendWebSocketNotification(recipientId, notification);
+
+      return notification;
+    } catch (error) {
+      console.error('❌ Erreur notification nouveau message:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new NotificationService();

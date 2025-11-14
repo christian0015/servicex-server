@@ -70,6 +70,12 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/clients', require('./routes/clients'));
 app.use('/api/providers', require('./routes/providers'));
 
+
+// app.js - AJOUT
+const messageRoutes = require('./routes/messageRoutes');
+// Routes de messagerie
+app.use('/api/messages', messageRoutes);
+
 // Dans server.js, ajoutez cette ligne avec les autres routes
 app.use('/api/seed', require('./routes/seed'));
 
